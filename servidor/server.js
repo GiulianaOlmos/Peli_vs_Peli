@@ -15,6 +15,9 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json());
 
 app.get('/competencias', competenciasController.buscarCompetencias);
+app.get('/competencias/:id/peliculas', competenciasController.obtenerDosPeliculas);
+app.post('/competencias/:idCompetencia/voto', competenciasController.guardarVoto);
+app.get('/competencias/:id/resultados', competenciasController.cargarResultados);
 
 var port = '8080';
 
