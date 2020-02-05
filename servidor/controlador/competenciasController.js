@@ -99,9 +99,135 @@ function cargarResultados(req, res){
     });
 }
 
+function crearCompetencia(req,res){
+    var nombreCompetencia = req.body.nombre;
+    var generoCompetencia = req.body.genero === '0' ? null : req.body.genero;
+    var directorCompetencia = req.body.director === '0' ? null : req.body.director;
+    var actorCompetencia = req.body.actor === '0' ? null : req.body.actor;
+    
+    var queryNueva = "INSERT INTO competencia (nombre, genero_id, director_id, actor_id) VALUES ('" + nombreCompetencia + "', " + generoCompetencia + ", " + directorCompetencia + ", " + actorCompetencia + ");";
+    
+    connection.query(queryNueva, function(error, resultado) {
+        if (error) {
+            console.log("Hubo un error al crear la competencia", error.message);
+            return res.status(500).send("Hubo un error al crear la competencia");
+        }
+        res.send(JSON.stringify(resultado));
+    }); 
+}
+
+function eliminarVotos(req,res){
+    var idCompetencia = req.params.id;
+    var eliminar = "DELETE FROM voto WHERE competencia_id = " + idCompetencia;
+    connection.query(eliminar, function (error, resultado){
+        if (error) {
+            console.log("Error al eliminar votos", error.message);
+            return res.status(500).send(error);
+        }
+        console.log("Competencia reiniciada id: " + idCompetencia);
+        res.send(JSON.stringify(resultado));
+    });
+}
+
+function crearCompetenciaPorGenero(req,res){
+    var pedido = "SELECT * FROM genero"
+    connection.query(pedido, function (error, resultado){
+        if (error) {
+            console.log("Error al cargar géneros", error.message);
+            return res.status(500).send(error);
+        }
+        res.send(JSON.stringify(resultado));
+    });
+}
+
+function crearCompetenciaPorDirectores(req,res){
+    var pedido = "SELECT * FROM director"
+    connection.query(pedido, function (error, resultado, fields){
+        if (error) {
+            console.log("Error al cargar directores", error.message);
+            return res.status(500).send(error);
+        }
+        res.send(JSON.stringify(resultado));
+    });
+}
+
+function crearCompetenciaPorActores(req,res){
+    var pedido = "SELECT * FROM actor"
+    connection.query(pedido, function (error, resultado, fields){
+        if (error) {
+            console.log("Error al cargar actores", error.message);
+            return res.status(500).send(error);
+        }
+        res.send(JSON.stringify(resultado));
+    });
+}
+
+function obtenerNombre(req, res){
+    var nombreCompetencia = req.params.id;
+    var query = "SELECT competencia.id, competencia.nombre, genero.nombre genero, director.nombre director, actor.nombre actor FROM competencia LEFT JOIN genero ON genero_id = genero.id LEFT JOIN director ON director_id= director.id LEFT JOIN actor ON actor_id= actor.id WHERE competencia.id = " + nombreCompetencia;
+    connection.query(query, function(error, resultado){
+        if (error) {
+            console.log("Hubo un error en la consulta", error.message);
+            return res.status(500).send("Hubo un error en la consulta");
+        }
+
+        var response = {
+            'id': resultado,
+            'nombre': resultado[0].nombre,
+            'genero_nombre': resultado[0].genero,
+            'actor_nombre': resultado[0].actor,
+            'director_nombre': resultado[0].director
+        }
+        res.send(JSON.stringify(response));
+    });
+}
+
+function eliminarCompetencia(req, res) {
+    var idCompetencia = req.params.idCompetencia;
+    var borrar = "DELETE FROM competencia WHERE id =" + idCompetencia;
+    
+    connection.query(borrar, function (error, resultado){
+        if(error){
+            console.log("Error al eliminar la competencia", error.message);
+            return res.status(500).send("Error al eliminar competencia");
+        }
+        res.send(JSON.stringify(resultado));
+    });
+}
+           
+
+function editarCompetencia(req,res) {
+    var idCompetencia = req.params.id;
+    var nuevoNombre = req.body.nombre;
+    var queryString = "UPDATE competencia SET nombre = '"+ nuevoNombre +"' WHERE id = "+ idCompetencia +";";
+    
+    connection.query(queryString,function(error, resultado, fields){
+        if(error){
+            return res.status(500).send("Error al modificar la competencia")
+        }
+        if (resultado.length == 0){
+            console.log("No se encontro la pelicula buscada con ese id");
+            return res.status(404).send("No se encontro ninguna pelicula con ese id");
+        } else {
+            var response = {
+                'id': resultado
+            };
+        }
+        res.send(JSON.stringify(response));
+    });
+}
+
 module.exports = {
     buscarCompetencias: buscarCompetencias,
     obtenerDosPeliculas: obtenerDosPeliculas,
     guardarVoto: guardarVoto,
     cargarResultados: cargarResultados,
+    crearCompetencia: crearCompetencia,
+    eliminarVotos: eliminarVotos,
+    crearCompetenciaPorGenero: crearCompetenciaPorGenero,
+    crearCompetenciaPorDirectores: crearCompetenciaPorDirectores,
+    crearCompetenciaPorActores: crearCompetenciaPorActores,
+    obtenerNombre: obtenerNombre,
+    eliminarCompetencia: eliminarCompetencia,
+    editarCompetencia: editarCompetencia
 }
