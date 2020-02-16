@@ -117,9 +117,10 @@ function crearCompetencia(req,res){
 }
 
 function eliminarVotos(req,res){
-    var idCompetencia = req.params.id;
-    var eliminar = "DELETE FROM voto WHERE competencia_id = " + idCompetencia;
-    connection.query(eliminar, function (error, resultado){
+    let idCompetencia = req.params.id;
+    let eliminar = "DELETE FROM voto WHERE competencia_id = " + idCompetencia;
+
+    connection.query(eliminar, function(error, resultado, fields) {
         if (error) {
             console.log("Error al eliminar votos", error.message);
             return res.status(500).send(error);
