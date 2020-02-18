@@ -104,17 +104,63 @@ function crearCompetencia(req,res){
     var generoCompetencia = req.body.genero === '0' ? null : req.body.genero;
     var directorCompetencia = req.body.director === '0' ? null : req.body.director;
     var actorCompetencia = req.body.actor === '0' ? null : req.body.actor;
+
+    if(!nombreCompetencia){
+        console.log("El nombre de la competencia no puede ser vacio", error.message);
+        return res.status(422).send("Falta definir el nombre de la competencia");
+    }
+
+    let queryExisteCompetencia = "SELECT * FROM competencia WHERE nombre LIKE '%" + nombreCompetencia + "%'"; 
     
-    var queryNueva = "INSERT INTO competencia (nombre, genero_id, director_id, actor_id) VALUES ('" + nombreCompetencia + "', " + generoCompetencia + ", " + directorCompetencia + ", " + actorCompetencia + ");";
-    
-    connection.query(queryNueva, function(error, resultado) {
-        if (error) {
-            console.log("Hubo un error al crear la competencia", error.message);
-            return res.status(500).send("Hubo un error al crear la competencia");
+    connection.query(queryExisteCompetencia, function(error, resultado){
+        if(error){
+            console.log("Hubo un error en la conexion", error.message);
+            return res.status(500).send("Hubo un error en la conexion"); 
         }
-        res.send(JSON.stringify(resultado));
-    }); 
+        if(resultado.length !== 0){
+            console.log("La competencia ya existe");
+            return res.status(422).send("La competencia ya existe"); 
+        }
+
+        let traerLasPeliculas = 'Select count(*) as cantidad FROM pelicula P left join director_pelicula DP on (P.id = DP.pelicula_id) left join actor_pelicula AP on (P.id = AP.pelicula_id) WHERE true';
+
+        if(generoCompetencia){
+            traerLasPeliculas += " AND genero_id = " + generoCompetencia;
+        }
+
+        if(directorCompetencia){
+            traerLasPeliculas += " AND director_id = " + directorCompetencia;
+        }
+        
+        if(actorCompetencia){
+            traerLasPeliculas += " AND actor_id = " + actorCompetencia;
+        }
+
+        connection.query(traerLasPeliculas, function(error, resultadoPeliculas){
+            if(error){
+                console.log("Hubo un error en la conexion", error.message);
+                return res.status(500).send("Hubo un error en la conexion"); 
+            }
+            if(resultadoPeliculas[0].cantidad <= 1){
+                console.log("No hay suficientes peliculas para crear esta competencia");
+                return res.status(422).send("No hay suficientes peliculas para crear esta competencia."); 
+            }
+            
+            var queryNueva = "INSERT INTO competencia (nombre, genero_id, director_id, actor_id) VALUES ('" + nombreCompetencia + "', " + generoCompetencia + ", " + directorCompetencia + ", " + actorCompetencia + ");";
+    
+            connection.query(queryNueva, function(error, resultado) {
+                if (error) {
+                    console.log("Hubo un error al crear la competencia", error.message);
+                    return res.status(500).send("Hubo un error al crear la competencia");
+                }
+                res.send(JSON.stringify(resultado));
+            }); 
+        })
+
+    })  
+
 }
+
 
 function eliminarVotos(req,res){
     let idCompetencia = req.params.id;
